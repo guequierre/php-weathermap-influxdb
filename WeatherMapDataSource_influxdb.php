@@ -38,30 +38,30 @@ class WeatherMapDataSource_influxdb extends WeatherMapDataSource {
 			$password = urlencode($matches[4]);
 			$seriesin = $matches[5];
 			$seriesout = $matches[6];
-		}
 
-		$buffer = "";
-		$query = urlencode("select mean(value) from $seriesin where time > now() - 3m");
-		$file = "http://$host:8086/db/$database/series?q=$query&u=$username&p=$password";
-		$fp = fopen($file,"r");
-		while (!feof($fp)) {
-			$buffer .= fgets($fp,4096);
+
+			$buffer = "";
+			$query = urlencode("select mean(value) from $seriesin where time > now() - 3m");
+			$file = "http://$host:8086/db/$database/series?q=$query&u=$username&p=$password";
+			$fp = fopen($file,"r");
+			while (!feof($fp)) {
+				$buffer .= fgets($fp,4096);
+			}
+			fclose($fp);
+			$decoded = json_decode($buffer);
+			$data[IN] = round($decoded[0]->points[0][1]);
+			
+			$buffer = "";
+			$query = urlencode("select mean(value) from $seriesout where time > now() - 3m");
+			$file = "http://$host:8086/db/$database/series?q=$query&u=$username&p=$password";
+			$fp = fopen($file,"r");
+			while (!feof($fp)) {
+				$buffer .= fgets($fp,4096);
+			}
+			fclose($fp);
+			$decoded = json_decode($buffer);
+			$data[OUT] = round($decoded[0]->points[0][1]);
 		}
-		fclose($fp);
-		$decoded = json_decode($buffer);
-		$data[IN] = round($decoded[0]->points[0][1]);
-		
-		$buffer = "";
-		$query = urlencode("select mean(value) from $seriesout where time > now() - 3m");
-		$file = "http://$host:8086/db/$database/series?q=$query&u=$username&p=$password";
-		$fp = fopen($file,"r");
-		while (!feof($fp)) {
-			$buffer .= fgets($fp,4096);
-		}
-		fclose($fp);
-		$decoded = json_decode($buffer);
-		$data[OUT] = round($decoded[0]->points[0][1]);
-		
 		return( array($data[IN], $data[OUT], $data_time) );
 	}
 }
